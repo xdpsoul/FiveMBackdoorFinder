@@ -19,9 +19,9 @@ FOUND_ITEMS=()
 
 ############################################# CONFIGURATION ############################################
 
-SCAN_PATH="/var/lib/pterodactyl/volumes/d2e86aa4-9f8d-432c-b00e-528e9f723f5b/"
+SCAN_PATH="/var/lib/pterodactyl/volumes/848cd6c1-8f29-43a1-92d3-d66eadd40eb5/"
 
-BASE_PATH="ESXLegacy_624CF0.base"
+BASE_PATH="ESXLegacy_1F7A87.base"
 
 REPORT_FILE="lunashield_report_$(date +%m%d_%H%M%S).txt"
 
