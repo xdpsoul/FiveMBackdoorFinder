@@ -19,9 +19,11 @@ FOUND_ITEMS=()
 
 ############################################# CONFIGURATION ############################################
 
-SCAN_PATH="/var/lib/pterodactyl/volumes/848cd6c1-8f29-43a1-92d3-d66eadd40eb5/"
+SCAN_PATH="/var/lib/pterodactyl/volumes/2312628e-b975-42cf-b3cf-0dc0b3a35b5a/"
 
-BASE_PATH="ESXLegacy_1F7A87.base"
+BASE_PATH="ESXLegacy_696C1C.base"
+
+FULL_SCAN_PATH="${SCAN_PATH}txData/${BASE_PATH}/resources/"
 
 REPORT_FILE="lunashield_report_$(date +%m%d_%H%M%S).txt"
 
@@ -202,6 +204,8 @@ scan 'screenshare:webrtcIceCandidate' "Blum Panel NEW" "CRITICAL" "lua"
 scan '\x50\x65\x72\x66\x6f\x72\x6d\x48\x74\x74\x70\x52\x65\x71\x75\x65\x73\x74' "Blum Panel NEW" "CRITICAL" "lua"
 scan '\\u0075\\u006e\\u0064\\u0065\\u0066\\u0069\\u006e\\u0065\\u0064' "Blum Panel NEW" "CRITICAL" "js"
 scan 'function\(\){const [a-z]{10}=[0-9]{3};function [a-z]{9}\(a,k\){var s=[^;]+;for\(var i=0;i<a.length;i++\){s\+=String\.fromCharCode\(a\[i\]\^k\);}return s;}const [a-z]{9}=[^;]+;eval\([a-z]{9}\([a-z]{9},[a-z]{10}\)\);}\(\)\);' "Blum Panel NEW - XOR Decoder" "CRITICAL" "js"
+scan '\\x1A\\x40\\x47\\x41\\x47' "Blum Panel NEW" "CRITICAL" "js"
+scan 'const k="r4314";' "Blum Panel NEW" "CRITICAL" "js"
 scan 'eval(s.replace' "Miaus - eval+replace" "CRITICAL" "js"
 scan 'v="\\u00' "Miaus - Unicode Payload" "CRITICAL" "js"
 scan "v='\\\\u00" "Miaus - Unicode Payload" "CRITICAL" "js"
@@ -236,39 +240,39 @@ scan 'String.fromCharCode(parseInt' "JS - Unicode Decoding" "HIGH" "js"
 scan 'fromCharCode' "JS - Char Conversion" "MEDIUM" "js"
 scan 'eval(' "JS - eval()" "HIGH" "js"
 
-hidden_files=$(find "$SCAN_PATH" -type f \( -name ".*\.lua" -o -name ".*\.js" \) 2>/dev/null)
+echo -e "$FULL_SCAN_PATH"
+hidden_files=$(find "$FULL_SCAN_PATH" -type f \( -name "*.lua" -o -name "*.js" \) 2>/dev/null)
 if [ -n "$hidden_files" ]; then
-    echo -e "${YELLOW}📋 Found $(echo "$hidden_files" | wc -l) hidden files${NC}"
+    echo -e "${YELLOW}📋 Found $(echo "$hidden_files" | wc -l) files${NC}"
     
     echo "$hidden_files" | while read file; do
         if [ -f "$file" ]; then
             first_line=$(head -n 1 "$file" 2>/dev/null | tr -d '\0')
             
             if [[ "$first_line" =~ ^/\*\ \[.*\]\ \*/ ]]; then
-                if grep -q "fubo" "$file" 2>/dev/null; then
-                    echo -e "${RED}🔴 MASKED BACKDOOR: ${YELLOW}$file${NC}"
-                    echo -e "${RED}   └── 🗑️  DELETING...${NC}"
-                    
-                    rm -f "$file"
-                    if [ ! -f "$file" ]; then
-                        echo -e "${GREEN}   └── ✅ DELETED${NC}"
-                        CRITICAL_COUNT=$((CRITICAL_COUNT + 1))
-                        FOUND_ITEMS+=("CRITICAL|Blum - XOR Masked Backdoor|1")
-                        FOUND_ITEMS+=("DELETED|FILE: $file|1")
-                    else
-                        echo -e "${RED}   └── ❌ DELETE FAILED${NC}"
-                    fi
+                echo -e "${RED}🔴 FOUND FILE WITH PATTERN: ${YELLOW}$file${NC}"
+                echo -e "${RED}   └── Pattern: $first_line${NC}"
+                echo -e "${RED}   └── 🗑️  DELETING...${NC}"
+                
+                rm -f "$file"
+                if [ ! -f "$file" ]; then
+                    echo -e "${GREEN}   └── ✅ DELETED${NC}"
+                    CRITICAL_COUNT=$((CRITICAL_COUNT + 1))
+                    FOUND_ITEMS+=("CRITICAL|File with /* [*] */ pattern|1")
+                    FOUND_ITEMS+=("DELETED|FILE: $file|1")
+                else
+                    echo -e "${RED}   └── ❌ DELETE FAILED${NC}"
                 fi
             fi
         fi
     done
     
     echo "" >> "$REPORT_FILE"
-    echo "[CRITICAL] Hidden Files (Complete List)" >> "$REPORT_FILE"
+    echo "[CRITICAL] Files with /* [*] */ pattern" >> "$REPORT_FILE"
     echo "$hidden_files" >> "$REPORT_FILE"
     
 else
-    echo -e "${GREEN}✅ No hidden files found${NC}"
+    echo -e "${GREEN}✅ No files found${NC}"
 fi
 
 echo -e ""
